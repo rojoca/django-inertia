@@ -6,6 +6,9 @@ from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.response import Response
 
 
+def get_asset_version():
+
+
 class InertiaRedirect(Response):
     status_code = status.HTTP_303_SEE_OTHER
 
@@ -30,9 +33,6 @@ class InertiaRendererMixin(object):
             return only
         return None
 
-    def get_asset_version(self):
-        return "test"
-
     def apply_shared(self, data, only=None):
         # TODO: apply shared data to data
         # - only add if not in only
@@ -56,7 +56,7 @@ class InertiaRendererMixin(object):
                 "component": response.inertia_component,
                 "props": self.apply_shared(data, only=only),
                 "url": request.path,
-                "version": self.get_asset_version()
+                "version": get_asset_version()
             }
 
         # return regular data
@@ -84,7 +84,7 @@ class InertiaNegotiation(DefaultContentNegotiation):
         if is_inertia:
             if request.method == 'get':
                 version = request.META.get('HTTP_X_INERTIA_VERSION', None)
-                if version != get_current_version():
+                if version != get_asset_version():
                     raise Conflict()
 
             renderer = InertiaJSONRenderer()
