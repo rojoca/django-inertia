@@ -1,0 +1,55 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "cross-env NODE_ENV=development vue-cli-service serve",
+    "build": "cross-env NODE_ENV=production vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@fullhuman/postcss-purgecss": "^2.0.4",
+    "@inertiajs/inertia": "^0.1.7",
+    "@inertiajs/inertia-vue": "^0.1.2",
+    "core-js": "^3.4.4",
+    "cross-env": "^6.0.3",
+    "lodash": "^4.17.15",
+    "popper.js": "^1.16.0",
+    "portal-vue": "^2.1.7",
+    "postcss-import": "^12.0.1",
+    "postcss-nesting": "^7.0.1",
+    "resolve-url-loader": "^3.1.1",
+    "tailwindcss": "^1.1.4",
+    "vue": "^2.6.10",
+    "vue-meta": "^2.3.2",
+    "webpack-bundle-tracker": "^0.4.3"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.1.0",
+    "@vue/cli-plugin-eslint": "^4.1.0",
+    "@vue/cli-service": "^4.1.0",
+    "babel-eslint": "^10.0.3",
+    "eslint": "^5.16.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "rules": {},
+    "parserOptions": {
+      "parser": "babel-eslint"
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}

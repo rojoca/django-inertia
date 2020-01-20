@@ -16,6 +16,8 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    USERNAME_FIELD = 'email'
+
     @property
     def name(self):
         return "{} {}".format(self.first_name, self.last_name)
