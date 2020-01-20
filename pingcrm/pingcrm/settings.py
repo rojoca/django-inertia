@@ -34,7 +34,6 @@ ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS', default=[])
 REST_FRAMEWORK = {
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'inertia.negotiation.InertiaNegotiation',
     'EXCEPTION_HANDLER': 'inertia.exceptions.inertia_exception_handler'
-
 }
 
 # Application definition
@@ -135,7 +134,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/'
+STATIC_URL = '/static/'
 STATIC_DIRS = ["frontend/dist"]
 
 WEBPACK_LOADER = {
@@ -153,3 +152,19 @@ WEBPACK_LOADER = {
 # set csrf token names to correct value to ensure axios sets the CSRF header correctly
 CSRF_COOKIE_NAME = 'XSRF-TOKEN'
 CSRF_HEADER_NAME = 'HTTP_X_XSRF_TOKEN'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': env('DJANGO_LOG_LEVEL', default='INFO'),
+        },
+    },
+}

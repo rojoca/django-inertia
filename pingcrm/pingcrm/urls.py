@@ -16,9 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from app import views as app_views
+from app import views
 
+app_name = "pingcrm"
 urlpatterns = [
-    path('', app_views.Dashboard.as_view(), name="dashboard"),
-    path('login', app_views.Login.as_view(), name="login")
+    path('', views.Dashboard.as_view(), name="dashboard"),
+    path('login', views.Login.as_view(), name="login")
 ]

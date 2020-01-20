@@ -2,6 +2,9 @@ from rest_framework import status, views
 from rest_framework.exceptions import ValidationError, APIException, PermissionDenied, NotAuthenticated
 
 
+LOGIN_REDIRECT="/login" # getattr(settings, 'INERTIA_LOGIN_REDIRECT', '/login')
+
+
 def inertia_exception_handler(exc, context):
     override_status = None
     overrid_headers = {}
