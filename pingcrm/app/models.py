@@ -9,6 +9,7 @@ class Account(models.Model):
 
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     photo_path = models.CharField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=255, null=True, blank=True)
@@ -17,6 +18,7 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['account', 'role']
 
     @property
     def name(self):

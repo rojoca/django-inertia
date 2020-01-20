@@ -31,6 +31,12 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS', default=[])
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'inertia.negotiation.InertiaNegotiation',
+    'EXCEPTION_HANDLER': 'inertia.exceptions.inertia_exception_handler'
+
+}
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -60,7 +66,7 @@ ROOT_URLCONF = 'pingcrm.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/public')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,12 +135,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-# STATIC_URL = '/static/'
+STATIC_URL = '/'
 STATIC_DIRS = ["frontend/dist"]
-
-REST_FRAMEWORK = {
-    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'app.inertia.InertiaNegotiation',
-}
 
 WEBPACK_LOADER = {
     'DEFAULT': {

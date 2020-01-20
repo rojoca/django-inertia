@@ -1,19 +1,7 @@
-from rest_framework import status, response, views
-from rest_framework.negotiation import DefaultContentNegotiation
+from rest_framework import status
+from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
-from rest_framework.exceptions import ValidationError, APIException, PermissionDenied, NotAuthenticated
-
-
-TEMPLATE_NAME="index.html" # getattr(settings, 'INERTIA_TEMPLATE_NAME', 'index.html')
-LOGIN_REDIRECT="/login" # getattr(settings, 'INERTIA_LOGIN_REDIRECT', '/login')
-
-
-def get_asset_version():
-    pass
-
-
-class InertiaRedirect(response.Response):
-    status_code = status.HTTP_303_SEE_OTHER
+from rest_framework.negotiation import DefaultContentNegotiation
 
 
 class Conflict(APIException):
@@ -98,40 +86,3 @@ class InertiaNegotiation(DefaultContentNegotiation):
             renderer, media_type = super(InertiaNegotiation, self).select_renderer(request, renderers, format_suffix=format_suffix)
 
         return (renderer, media_type)
-
-
-def inertia_exception_handler(exc, context):
-    override_status = None
-    overrid_headers = {}
-    if isinstance(exc, ValidationError):
-        override_status = status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    if isinstance(exc, PermissionDenied) or isinstance(exc, NotAuthenticated):
-        override_status = status.HTTP_302_FOUND
-        overrid_headers["Location"] = LOGIN_REDIRECT
-
-    # use rest framework exception handler
-    response = views.exception_handler(exc, context)
-
-    if override_status:
-        response.status = override_status
-
-    if response.status == 409:
-        response.headers['X-Inertia-Location'] = request.path
-
-    return response
-
-
-class Response(response.Response):
-    template_name = TEMPLATE_NAME
-
-
-class InertiaViewMixin(object):
-    content_negotiation_class = InertiaNegotiation
-
-
-class InertiaView(InertiaViewMixin, views.APIView):
-    def get(self, request, format=None):
-        return Response(data={})
-
-

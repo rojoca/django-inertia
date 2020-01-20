@@ -1,9 +1,8 @@
 from django.contrib.auth import authenticate, login
 from django.http import Http404, HttpResponseRedirect
 from rest_framework import serializers
-from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .inertia import InertiaView, Response
+from inertia.views import InertiaView, Response
 
 
 class LoginSerializer(serializers.Serializer):
