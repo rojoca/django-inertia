@@ -15,11 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from js_urls.views import JsUrlsView
 
 from app import views
 
 app_name = "pingcrm"
 urlpatterns = [
+    path(r'^js-urls/$', JsUrlsView.as_view(), name='js_urls'),
     path('', views.Dashboard.as_view(), name="dashboard"),
     path('login', views.Login.as_view(), name="login")
 ]
+
+handler500 = 'django.views.defaults.server_error'

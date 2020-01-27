@@ -50,7 +50,7 @@ export default {
   methods: {
     submit() {
       this.sending = true
-      this.$inertia.post(this.route('login.attempt'), {
+      this.$inertia.post(this.route('login'), {
         email: this.form.email,
         password: this.form.password,
         remember: this.form.remember,

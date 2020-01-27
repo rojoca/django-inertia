@@ -15,13 +15,13 @@ class LoginSerializer(serializers.Serializer):
 
 class Login(InertiaView):
     def get(self, request, format=None):
-        return Response(data={}, inertia_component='Login')
+        return Response(data={}, inertia_component='Auth/Login')
 
     def post(self, request, format=None):
         s = LoginSerializer(data=request.data)
         s.is_valid(raise_exception=True)
 
-        user = authenticate(s.validated_data['email'], s.validated_data['password'])
+        user = authenticate(request, username=s.validated_data['email'], password=s.validated_data['password'])
         if not user:
             raise serializers.ValidationError("These credentials do not match our records.")
 

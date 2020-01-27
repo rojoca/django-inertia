@@ -16,11 +16,12 @@ class InertiaRedirect(response.Response):
 
 
 class Response(response.Response):
-    template_name = TEMPLATE_NAME
-    inertia_component = 'App'
+    inertia_component = None
 
     def __init__(self, *args, **kwargs):
         self.inertia_component = kwargs.pop('inertia_component')
+        if 'template_name' not in kwargs:
+            kwargs['template_name'] = TEMPLATE_NAME
         super(Response, self).__init__(*args, **kwargs)
 
 
@@ -29,23 +30,17 @@ class InertiaViewMixin(object):
 
 
 class InertiaView(InertiaViewMixin, views.APIView):
+    inertia_component = 'App'
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super(InertiaView, self).finalize_response(request, response, *args, **kwargs)
-        logger.info(response.renderer_context)
-        return response
 
-    def response(self, data={}, status=200, headers={}, template_name=None, content_type=None):
-        return Response(
-            data=data,
-            status=status,
-            headers=headers,
-            template_name=template_name,
-            content_type=content_type,
-            context={
-                'request': request
-            }
-        )
+        if isinstance(response, Response) and not response.inertia_component:
+            response.inertia_component = self.inertia_component
+
+        logger.info("FINALIE")
+        logger.info(response)
+        return response
 
     def get(self, request, format=None):
         return Response(data={})

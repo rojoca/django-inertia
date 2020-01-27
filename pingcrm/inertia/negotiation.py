@@ -1,10 +1,15 @@
 import logging
+import json
 from rest_framework import status
 from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.negotiation import DefaultContentNegotiation
 
 logger = logging.getLogger('django')
+
+
+def get_asset_version():
+    return "test"
 
 
 class Conflict(APIException):
@@ -36,37 +41,44 @@ class InertiaRendererMixin(object):
             # filter props by only (X-Inertial-Partial-Data)
             return {k: data[k] for k in only}
 
+        if "errors" not in data:
+            data["errors"] = []
+
         return data
 
-    def apply(self, data, media_type=None, renderer_context=None):
+    def apply(self, data, accepted_media_type=None, renderer_context=None):
         logger.info(renderer_context)
         request = renderer_context['request']
         response = renderer_context['response']
 
         # if the response has an inertia_component
         # return inertia data
-        if response.inertia_component:
+        if hasattr(response, 'inertia_component'):
             only = self.get_only(response.inertia_component)
             return {
                 "component": response.inertia_component,
                 "props": self.apply_shared(data, only=only),
                 "url": request.path,
-                "version": get_asset_version()
+                "version": get_asset_version(),
             }
 
         # return regular data
         return data
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        data = self.apply(data, renderer_context)
+        data = self.apply(data, accepted_media_type=accepted_media_type, renderer_context=renderer_context)
         return super(InertiaRendererMixin, self).render(data, accepted_media_type=accepted_media_type, renderer_context=renderer_context)
 
 
 class InertiaHTMLRenderer(InertiaRendererMixin, TemplateHTMLRenderer):
-    pass
+
+    def get_template_context(self, data, renderer_context):
+        # allow data to be injected into template
+        data["json"] = json.dumps(data)
+        return super(InertiaHTMLRenderer, self).get_template_context(data, renderer_context)
 
 
-class InertiaJSONRenderer(InertiaRendererMixin, TemplateHTMLRenderer):
+class InertiaJSONRenderer(InertiaRendererMixin, JSONRenderer):
     pass
 
 

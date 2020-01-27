@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'webpack_loader',
+    'js_urls',
     'app'
 ]
 
@@ -65,7 +65,7 @@ ROOT_URLCONF = 'pingcrm.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'frontend/public')],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/dist/assets')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,19 +135,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_DIRS = ["frontend/dist"]
-
-WEBPACK_LOADER = {
-    'DEFAULT': {
-        'CACHE': not DEBUG,
-        'BUNDLE_DIR_NAME': '',
-        'STATS_FILE': os.path.join(BASE_DIR, 'frontend/webpack-stats.json'),
-        'POLL_INTERVAL': 0.1,
-        'TIMEOUT': None,
-        'IGNORE': [r'.+\.hot-update.js', r'.+\.map'],
-        'LOADER_CLASS': 'webpack_loader.loader.WebpackLoader',
-    }
-}
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "frontend/dist")
+]
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # set csrf token names to correct value to ensure axios sets the CSRF header correctly
 CSRF_COOKIE_NAME = 'XSRF-TOKEN'
@@ -168,3 +159,8 @@ LOGGING = {
         },
     },
 }
+
+JS_URLS = [
+    "dashboard",
+    "login"
+]
