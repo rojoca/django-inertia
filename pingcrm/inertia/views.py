@@ -1,6 +1,6 @@
 import logging
-from rest_framework import status, response, views
-from .negotiation import InertiaNegotiation
+from rest_framework import status, response, views, viewsets, generics
+from .negotiation import InertiaNegotiation, InertiaHTMLRenderer, InertiaJSONRenderer
 
 logger = logging.getLogger('django')
 
@@ -15,32 +15,35 @@ class InertiaRedirect(response.Response):
     status_code = status.HTTP_303_SEE_OTHER
 
 
-class Response(response.Response):
-    inertia_component = None
 
-    def __init__(self, *args, **kwargs):
-        self.inertia_component = kwargs.pop('inertia_component')
-        if 'template_name' not in kwargs:
-            kwargs['template_name'] = TEMPLATE_NAME
-        super(Response, self).__init__(*args, **kwargs)
+def inertia(APIViewClass, component, template_name=None):
+    class WrappedInertiaView(object):
+        content_negotiation_class = InertiaNegotiation
 
+        def __init__(self, *args, **kwargs):
+            self._api_class_instance = APIViewClass(*args, **kwargs)
 
-class InertiaViewMixin(object):
-    content_negotiation_class = InertiaNegotiation
+        def __getattribute__(self, name):
+            try:
+                attr = super(APIViewClass, self).__getattribute__(name)
+            except AttributeError:
+                pass
+            else:
+                return attr
 
+            return self._api_class_instance.__getattribute__(name)
 
-class InertiaView(InertiaViewMixin, views.APIView):
-    inertia_component = 'App'
+        @property
+        def default_response_headers(self):
+            headers = self._api_class_instance.default_response_headers
+            headers["X-Inertia"] = True
+            return headers
 
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super(InertiaView, self).finalize_response(request, response, *args, **kwargs)
+        def get_renderer_context(self):
+            context = self._api_class_instance.get_renderer_context()
+            context["component"] = component
+            context["template_name"] = template_name
+            return context
 
-        if isinstance(response, Response) and not response.inertia_component:
-            response.inertia_component = self.inertia_component
+    return WrappedInertiaView
 
-        logger.info("FINALIE")
-        logger.info(response)
-        return response
-
-    def get(self, request, format=None):
-        return Response(data={})

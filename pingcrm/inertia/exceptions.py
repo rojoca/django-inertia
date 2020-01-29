@@ -12,6 +12,7 @@ def inertia_exception_handler(exc, context):
     override_headers = {}
     if isinstance(exc, ValidationError):
         logger.info("Got a validation error")
+        context['request'].session['errors'] = exc.detail
         override_headers["Location"] = context['request'].path
         override_status = status.HTTP_302_FOUND
 

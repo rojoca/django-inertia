@@ -1,9 +1,11 @@
 import logging
 from django.contrib.auth import authenticate, login
 from django.http import Http404, HttpResponseRedirect
-from rest_framework import serializers
+from rest_framework import serializers, viewsets, views
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from inertia.views import InertiaView, Response
+from inertia.views import inertia
+from .serializers import UserSerializer
 
 logger = logging.getLogger('django')
 
@@ -13,9 +15,10 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(required=True)
 
 
-class Login(InertiaView):
+@inertia("Auth/Login")
+class Login(views.APIView):
     def get(self, request, format=None):
-        return Response(data={}, inertia_component='Auth/Login')
+        return Response(data={})
 
     def post(self, request, format=None):
         s = LoginSerializer(data=request.data)
@@ -23,14 +26,33 @@ class Login(InertiaView):
 
         user = authenticate(request, username=s.validated_data['email'], password=s.validated_data['password'])
         if not user:
-            raise serializers.ValidationError("These credentials do not match our records.")
+            raise serializers.ValidationError({"email": ["These credentials do not match our records."]})
 
         login(request, user)
 
         return HttpResponseRedirect(redirect_to="/")
 
 
-class Dashboard(InertiaView):
+class LoggedInView(views.APIView):
     permission_classes = [IsAuthenticated]
 
+
+@inertia("Dashboard/Index")
+class Dashboard(LoggedInView):
+    pass
+
+
+@inertia("User/Index")
+class User(LoggedInView):
+    pass
+
+
+@inertia("User/Edit")
+class UserEdit(LoggedInView):
+    pass
+
+
+@inertia("User/Create")
+class UserCreate(LoggedInView):
+    pass
 
