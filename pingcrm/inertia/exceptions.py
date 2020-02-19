@@ -7,6 +7,16 @@ LOGIN_REDIRECT="/login" # getattr(settings, 'INERTIA_LOGIN_REDIRECT', '/login')
 logger = logging.getLogger('django')
 
 
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = 'Asset version conflict.'
+    default_code = 'conflict'
+
+    def __init__(self, detail=None, code=None, available_renderers=None):
+        self.available_renderers = available_renderers
+        super().__init__(detail, code)
+
+
 def inertia_exception_handler(exc, context):
     override_status = None
     override_headers = {}

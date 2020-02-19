@@ -166,3 +166,5 @@ JS_URLS = [
 ]
 
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+
+INERTIA_SHARED_SERIALIER_CLASS

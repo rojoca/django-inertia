@@ -42,17 +42,8 @@ class Dashboard(LoggedInView):
     pass
 
 
-@inertia("User/Index")
-class User(LoggedInView):
-    pass
-
-
-@inertia("User/Edit")
-class UserEdit(LoggedInView):
-    pass
-
-
-@inertia("User/Create")
-class UserCreate(LoggedInView):
-    pass
-
+@inertia("User/Index", retrieve="User/Edit")
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]

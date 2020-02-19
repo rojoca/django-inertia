@@ -1,5 +1,5 @@
 from django.contrib import messages
-from rest_framework import serializers
+from rest_framework import serializers, fields
 
 
 class InertiaResult(object):
@@ -13,17 +13,20 @@ class InertiaResult(object):
 
 class InertiaSerializer(serializers.Serializer):
     component = serializers.CharField()
-    props = serializer.SerializerMethodField()
+    props = serializers.SerializerMethodField()
     version = serializers.CharField()
     url = serializers.URLField(source='path')
 
     def get_props(self, obj):
-        serializer_class = settings.INERTIA_SHARED_SERIALIZER_CLASS
+        if hasattr(settings, 'INERTIA_SHARED_SERIALIZER_CLASS'):
+            serializer_class = settings.INERTIA_SHARED_SERIALIZER_CLASS
+        else:
+            serializer_class = SharedSerializer
         serializer = serializer_class(obj, context=self.context)
         return serializer.data
 
 
-class SharedSerializerBase(serializers.Serializer):
+class SharedSerializer(serializers.Serializer):
     def __init__(self, instance, *args, **kwargs):
         # exclude keys already included in data
         exclude = instance.data.keys()
@@ -35,16 +38,16 @@ class SharedSerializerBase(serializers.Serializer):
                 if field in self.fields:
                     self.fields.pop(field)
 
-        super(SharedSerializerBase, self).__init__(*args, **kwargs)
+        super(SharedSerializer, self).__init__(*args, **kwargs)
 
     def to_representation(self, instance):
         # merge the shared data with the component data
-        data = super(SharedSerializerBase, self).to_representation(instance).copy()
+        data = super(SharedSerializer, self).to_representation(instance).copy()
         data.update(instance.data)
         return data
 
 
-def SharedField(serializers.Field):
+class SharedField(fields.Field):
     """
     Shared fields by default are Read-only and require a context
     """

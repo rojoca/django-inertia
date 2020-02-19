@@ -14,28 +14,25 @@ def get_asset_version():
     return "test"
 
 
-class Conflict(APIException):
-    status_code = status.HTTP_409_CONFLICT
-    default_detail = 'Asset version conflict.'
-    default_code = 'conflict'
-
-    def __init__(self, detail=None, code=None, available_renderers=None):
-        self.available_renderers = available_renderers
-        super().__init__(detail, code)
-
-
 class InertiaRendererMixin(object):
     partial_component = None
     partial_only = None
     shared_serializer_class = settings.INERTIA_SHARED_SERIALIER_CLASS
 
+    def get_inertia_component(self, renderer_context):
+        if "response" in renderer_context and renderer_context["response"].component:
+            return renderer_context["response"].component
+
+        return renderer_context["component"]
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        component = self.get_inertia_component(renderer_context)
         only = []
-        if self.partial_component == renderer_context["component"]:
+        if self.partial_component == component:
             only = self.partial_only
 
         result = InertiaResult(
-            renderer_context["component"],
+            component,
             renderer_context["request"].path,
             data,
             version=get_asset_version(),
@@ -68,17 +65,10 @@ class InertiaNegotiation(DefaultContentNegotiation):
 
     def select_renderer(self, request, renderers, format_suffix=None):
         # check for inertia headers:
-        is_inertia = request.META.get('HTTP_X_INERTIA', False)
-
-        if is_inertia:
-            if request.method == 'get':
-                version = request.META.get('HTTP_X_INERTIA_VERSION', None)
-                if version != get_asset_version():
-                    raise Conflict()
-
+        if request.inertia:
             renderer = self.json_renderer()
-            renderer.partial_component = request.META.get('HTTP_X_INERTIA_PARTIAL_COMPONENT', None)
-            renderer.partial_only = request.META.get('HTTP_X_INERTIA_PARTIAL_DATA', None)
+            renderer.partial_component = request.inertia.component
+            renderer.partial_only = request.inertia.only
             media_type = "application/json"
         else:
             renderer, media_type = super(InertiaNegotiation, self).select_renderer(
