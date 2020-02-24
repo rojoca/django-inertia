@@ -1,112 +1,51 @@
 import logging
 from functools import wraps
-from rest_framework import status, response, views, viewsets, generics, exceptions
+from django.conf import settings
+from rest_framework import response, views, viewsets, generics, exceptions
+from rest_framework.request import Request
 
-from .negotiation import InertiaNegotiation, InertiaHTMLRenderer, InertiaJSONRenderer
+from .negotiation import InertiaObject, InertiaNegotiation, InertiaHTMLRenderer, InertiaJSONRenderer
 from .exceptions import Conflict
 
 logger = logging.getLogger('django')
 
-TEMPLATE_NAME="index.html" # getattr(settings, 'INERTIA_TEMPLATE_NAME', 'index.html')
+
+class AssetVersion(object):
+    def get_version(self):
+       return "test"
 
 
-def get_asset_version():
-    pass
+def inertia(component_path, template_name=None, **kwargs):
+    def decorator(api_cls):
+        class WrappedInertiaView(api_cls):
+            content_negotiation_class = InertiaNegotiation
+            inertia = None
 
+            @property
+            def default_response_headers(self):
+                headers = super(WrappedInertiaView, self).default_response_headers
+                headers["X-Inertia"] = True
+                return headers
 
-class InertiaHeaders(object):
-    version = None
-    component = None
-    only = None
+            def get_renderer_context(self):
+                context = super(WrappedInertiaView, self).get_renderer_context()
+                context["template_name"] = template_name  # TODO: or INERTIA_TEMPLATE_NAME
+                context["inertia"] = self.inertia
+                return context
 
-    def include(self, name):
-        return self.only and name in self.only
+            def initialize_request(self, request, *args, **kwargs):
+                request = super(WrappedInertiaView, self).initialize_request(request, *args, **kwargs)
 
+                if not hasattr(request, 'inertia'):
+                    # dynamically add InertiaObject to the request
+                    inertia = InertiaObject.from_request(request, component_path)
+                    Request.inertia = property(lambda self: inertia)
+                    self.inertia = inertia  # add to view as convenience
 
-class InertiaResponse(response.Response):
+                return request
 
-    def __init__(self, wrapped_response, component):
-        self.wrapped_response = wrapped_response
-        self.component = component
-
-    def __getattribute__(self, name):
-        if name == "component":
-            return self.component
-
-        return self.wrapped_response.__getattribute__(name)
-
-
-class InertiaRedirect(response.Response):
-    status_code = status.HTTP_303_SEE_OTHER
-
-
-
-def inertia(APIViewClass, component_path, template_name=None, **component_map):
-    class WrappedInertiaView(object):
-        content_negotiation_class = InertiaNegotiation
-
-        def __init__(self, *args, **kwargs):
-            self._api_class_instance = APIViewClass(*args, **kwargs)
-
-        def __getattribute__(self, name):
-            try:
-                attr = super(WrappedInertiaView, self).__getattribute__(name)
-            except AttributeError:
-                pass
-            else:
-                return attr
-
-            attr = self._api_class_instance.__getattribute__(name)
-
-            # if attr name in list of components, decorate the method
-            # with the component decorator
-            if name in component_map:
-                return component(attr, component_map[name])
-            return attr
-
-        @property
-        def default_response_headers(self):
-            headers = self._api_class_instance.default_response_headers
-            headers["X-Inertia"] = True
-            return headers
-
-        def get_renderer_context(self):
-            context = self._api_class_instance.get_renderer_context()
-            context["template_name"] = template_name
-            context["component"] = component_path
-            return context
-
-        def initialize_inertia(self, request):
-            """
-            Get the inertia variables from the request headers if they exist
-            """
-            is_inertia = request.META.get('HTTP_X_INERTIA', False)
-
-            if is_inertia:
-                self.inertia = InertiaHeaders()
-                if request.method == 'get':
-                    # Check version is current
-                    self.inertia.version = request.META.get('HTTP_X_INERTIA_VERSION', None)
-                    if self.inertia.version != get_asset_version():
-                        raise Conflict()
-
-                # set partial details if they exist
-                self.inertia.component = request.META.get('HTTP_X_INERTIA_PARTIAL_COMPONENT', None)
-                only = request.META.get('HTTP_X_INERTIA_PARTIAL_DATA', None)
-                if only:
-                    self.inertia.only = only.split(',')
-
-        def initialize_request(self, request, *args, **kwargs):
-            request = self._api_class_instance.initialize_request(request, *args, **kwargs)
-
-            self.initialize_inertia(request)
-            if not hasattr(request, 'inertia'):
-                Request.inertia = property(lambda self: self.inertia)
-
-            return request
-
-
-    return WrappedInertiaView
+        return WrappedInertiaView
+    return decorator
 
 
 def component(component_path):

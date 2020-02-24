@@ -1,49 +1,54 @@
+import logging
+from collections import OrderedDict
 from django.contrib import messages
+from django.conf import settings
+from django.utils.module_loading import import_string
 from rest_framework import serializers, fields
+from rest_framework.relations import PKOnlyObject
+
+logger = logging.getLogger('django')
 
 
-class InertiaResult(object):
-    def __init__(self, component, url, data, version=None, only=None):
-        self.component = component
-        self.version = version
-        self.url = url
-        self.data = data
-        self.only = only or []
+class SharedSerializerBase(serializers.Serializer):
+    """
+    SharedSerializerBase is used to include common data across
+    requests in each inertia response.
 
+    You can define your own SharedSerializer by setting the
+    INERTIA_SHARED_SERIALIZER_CLASS in your settings.
 
-class InertiaSerializer(serializers.Serializer):
-    component = serializers.CharField()
-    props = serializers.SerializerMethodField()
-    version = serializers.CharField()
-    url = serializers.URLField(source='path')
+    Each SharedSerializer receives an InertiaObject as the
+    instance to be "serialized" as well as the render_context
+    as its context.
 
-    def get_props(self, obj):
-        if hasattr(settings, 'INERTIA_SHARED_SERIALIZER_CLASS'):
-            serializer_class = settings.INERTIA_SHARED_SERIALIZER_CLASS
-        else:
-            serializer_class = SharedSerializer
-        serializer = serializer_class(obj, context=self.context)
-        return serializer.data
+    The SharedSerializer serializes the Request by merging
+    its own fields with the data on the InertiaObject. Data from
+    the InertiaObject is never overwritten by the SharedSerializer.
+    In this way you can override shared data in your own views if
+    necessary.
 
+    Since the SharedSerializer is used for every Inertia response
+    you should avoid long running operations and always return
+    from methods as soon as possible.
 
-class SharedSerializer(serializers.Serializer):
-    def __init__(self, instance, *args, **kwargs):
-        # exclude keys already included in data
-        exclude = instance.data.keys()
+    """
+    def __init__(self, instance=None, *args, **kwargs):
+        # exclude fields already in data or not in instance.partial_data
+        exclude = instance.inertia.data.keys()
+        for field in self.fields:
+            if instance.inertia.partial_data and field not in instance.inertia.partial_data:
+                exclude.append(field)
 
-        # exclude fields not included in only (if there is an only)
-        if instance.only:
-            exclude = [field for field in self.fields if field not in instance.only]
-            for field in exclude:
-                if field in self.fields:
-                    self.fields.pop(field)
+        for field in exclude:
+            self.fields.pop(field)
 
-        super(SharedSerializer, self).__init__(*args, **kwargs)
+        super(SharedSerializerBase, self).__init__(instance, *args, **kwargs)
 
     def to_representation(self, instance):
         # merge the shared data with the component data
-        data = super(SharedSerializer, self).to_representation(instance).copy()
-        data.update(instance.data)
+        # ensuring that component data is always prioritized
+        data = super(SharedSerializerBase, self).to_representation(instance)
+        data.update(instance.inertia.data)
         return data
 
 
@@ -57,8 +62,11 @@ class SharedField(fields.Field):
         kwargs['read_only'] = True
         super().__init__(**kwargs)
 
+    def get_attribute(self, instance):
+        return instance
 
-class FlashField(SharedField):
+
+class FlashSerializer(SharedField):
     def to_representation(self, value):
         flash = {}
         try:
@@ -70,10 +78,31 @@ class FlashField(SharedField):
         return flash
 
 
-class SessionErrorsField(SharedField):
+class SessionErrorsSerializer(SharedField):
     def to_representation(self, value):
         try:
-            return self.context["request"].session["errors"]
+            return self.context["request"].session["errors"] or {}
         except:
             pass
         return {}
+
+
+class DefaultSharedSerializer(SharedSerializerBase):
+    errors = SessionErrorsSerializer(default=OrderedDict(), source='*')
+    flash = FlashSerializer(default=OrderedDict(), source='*')
+
+
+class InertiaSerializer(serializers.Serializer):
+    component = serializers.CharField()
+    props = serializers.SerializerMethodField()
+    version = serializers.CharField()
+    url = serializers.URLField()
+
+    def get_props(self, obj):
+        if hasattr(settings, 'INERTIA_SHARED_SERIALIZER_CLASS'):
+            serializer_class = import_string(settings.INERTIA_SHARED_SERIALIZER_CLASS)
+
+        else:
+            serializer_class = DefaultSharedSerializer
+        serializer = serializer_class(self.context["request"], context=self.context)
+        return serializer.data

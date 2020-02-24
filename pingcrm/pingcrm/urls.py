@@ -14,16 +14,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import SimpleRouter
 from js_urls.views import JsUrlsView
 
 from app import views
 
+
+router = SimpleRouter()
+router.register('users', views.UserViewSet)
+
 app_name = "pingcrm"
 urlpatterns = [
-    path(r'^js-urls/$', JsUrlsView.as_view(), name='js_urls'),
+    path(r'js-urls/', JsUrlsView.as_view(), name='js_urls'),
     path('', views.Dashboard.as_view(), name="dashboard"),
-    path('login', views.Login.as_view(), name="login")
+    path('login', views.Login.as_view(), name="login"),
+    path('', include(router.urls))
 ]
 
 handler500 = 'django.views.defaults.server_error'

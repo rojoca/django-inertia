@@ -5,6 +5,7 @@ from rest_framework import serializers, viewsets, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from inertia.views import inertia
+from .models import User
 from .serializers import UserSerializer
 
 logger = logging.getLogger('django')
@@ -39,10 +40,11 @@ class LoggedInView(views.APIView):
 
 @inertia("Dashboard/Index")
 class Dashboard(LoggedInView):
-    pass
+    def get(self, request, format=None):
+        return Response(data={})
 
 
-@inertia("User/Index", retrieve="User/Edit")
+# @inertia("User/Index", retrieve="User/Edit")
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

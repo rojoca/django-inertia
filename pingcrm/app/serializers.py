@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from inertia.serializers import DefaultSharedSerializer
 
 from .models import User, Account
 
@@ -16,3 +17,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'photo', 'role', 'first_name', 'last_name', 'account')
+
+
+class AuthSerializer(serializers.Serializer):
+    user = UserSerializer()
+
+
+class InertiaSharedSerializer(DefaultSharedSerializer):
+    auth = AuthSerializer("*")
+
+    class Meta:
+        fields = ('flash', 'errors', 'auth')

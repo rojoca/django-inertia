@@ -32,7 +32,6 @@ ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS', default=[])
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'inertia.negotiation.InertiaNegotiation',
     'EXCEPTION_HANDLER': 'inertia.exceptions.inertia_exception_handler'
 }
 
@@ -167,4 +166,4 @@ JS_URLS = [
 
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
-INERTIA_SHARED_SERIALIER_CLASS
+INERTIA_SHARED_SERIALIZER_CLASS = 'app.serializers.InertiaSharedSerializer'
